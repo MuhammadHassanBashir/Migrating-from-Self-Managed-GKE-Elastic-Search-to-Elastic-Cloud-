@@ -24,11 +24,11 @@ because we donot have kibana pod running on kubernetes cluster. So we need to do
 
 to get elastic search password use below command..
 
-  kubectl get secret ec-deploy-es-elastic-user -o=jsonpath='{.data.elastic}' | base64 --decode; echo
+  **kubectl get secret ec-deploy-es-elastic-user -o=jsonpath='{.data.elastic}' | base64 --decode; echo**
 
 Command to list indices
   
-  curl -k -u elastic:4S392wm9po05JIE7abVl0zi2 -X GET "https://localhost:7979/_cat/indices"  
+  **curl -k -u elastic:4S392wm9po05JIE7abVl0zi2 -X GET "https://localhost:7979/_cat/indices"**  
 
 so you can verify that indices once it storaged in elastic cloud.
 
@@ -36,7 +36,7 @@ so you can verify that indices once it storaged in elastic cloud.
 
 Copy the gcp service account key for bucket to Elasticsearch pod. For sending indices to gcp bucket.
 
-  kubectl cp secret.json ec-deploy-es-default-0:/usr/share/elasticsearch/data/secret.json
+  **kubectl cp secret.json ec-deploy-es-default-0:/usr/share/elasticsearch/data/secret.json**
 
 here pod name is “ ec-deploy-es-default” secret file is “secret.json” path location to in pod is “/usr/share/elasticsearch/data/secret.json”
 
@@ -44,7 +44,7 @@ here pod name is “ ec-deploy-es-default” secret file is “secret.json” pa
 
 Add the secret to the Elasticsearch keystore within the pod:
 
-  elasticsearch-keystore add-file gcs.client.default.credentials_file /usr/share/elasticsearch/data/secret.json
+  **elasticsearch-keystore add-file gcs.client.default.credentials_file /usr/share/elasticsearch/data/secret.json**
 
 so GKE elastic search can use this key for communication.. you need to run this in /bin directory
 
@@ -52,9 +52,9 @@ so GKE elastic search can use this key for communication.. you need to run this 
 
 Reload the secure settings in Elasticsearch to apply the changes:
   
-  curl -k -X POST -u elastic:<ELASTIC_PASSWORD> 
+  **curl -k -X POST -u elastic:<ELASTIC_PASSWORD> 
   "https://localhost:9200/_nodes/reload_secure_settings" -H "Content-Type: application/json" -d 
-  '{"secure_settings_password": ""}'
+  '{"secure_settings_password": ""}'**
 
 because it is need to restart the pod. but once i restart it secret file will be lost. that is why we use the above commad to this..
 
@@ -62,7 +62,7 @@ because it is need to restart the pod. but once i restart it secret file will be
 
 Configure the snapshot repository to point to Google Cloud Storage:
 
-  curl -k -X PUT -u elastic:<ELASTIC_PASSWORD> -H "Content-Type: application/json"
+  **curl -k -X PUT -u elastic:<ELASTIC_PASSWORD> -H "Content-Type: application/json"
   https://localhost:9200/_snapshot/disearch-backup -d 
   '{
   "type": "gcs",
@@ -72,7 +72,7 @@ Configure the snapshot repository to point to Google Cloud Storage:
   "compress": true,
   "client": "default"  
   }
-  }'
+  }'**
 
 here disearch-backup is repo name , bucket name is disearch_k8_es_db_backup , bucket folder name is disearch-stag-backup
 
@@ -82,13 +82,13 @@ use “port-forward” to run commands from local terminal in cluster
 
 Confirm that the snapshot repository is create or not:
 
-  curl -k -X GET -u elastic:<ELASTIC_PASSWORD> "https://localhost:9200/_snapshot/disearch-backup/_status"
+  **curl -k -X GET -u elastic:<ELASTIC_PASSWORD> "https://localhost:9200/_snapshot/disearch-backup/_status"**
 
 7. Create Snapshot Lifecycle Management (SLM) Policy:
 
 Define an SLM policy to automate snapshot creation:
 
-  curl -k -X PUT -u elastic:<ELASTIC_PASSWORD> -H "Content-Type: application/json" https://localhost:9200/_slm/policy/disearch-backup -d '{
+  **curl -k -X PUT -u elastic:<ELASTIC_PASSWORD> -H "Content-Type: application/json" https://localhost:9200/_slm/policy/disearch-backup -d '{
   "name": "<diseachsnap_{now/d}>",
   "schedule": "0 0 0 1 1 ?",
   "repository": "disearch-backup",
@@ -96,7 +96,7 @@ Define an SLM policy to automate snapshot creation:
   "include_global_state": true,
   "feature_states": []  
   }
-  }'
+  }'**
 
 here disearch-backup is the policy name , diseachsnap_{now/d} snapshot name and disearch-backup is repository name.
 
@@ -104,8 +104,8 @@ here disearch-backup is the policy name , diseachsnap_{now/d} snapshot name and 
 
 Manually trigger the SLM policy execution if needed:
   
-  curl -k -X PUT -u elastic:<ELASTIC_PASSWORD> "https://localhost:9200/_slm/policy/disearch-backup/_execute"
+  **curl -k -X PUT -u elastic:<ELASTIC_PASSWORD> "https://localhost:9200/_slm/policy/disearch-backup/_execute"**
 
 10. Get policy information 
   
-  curl -k -X GET -u elastic:4S392wm9po05JIE7abVl0zi2 "https://localhost:9200/_snapshot/_slm/policy/"
+  **curl -k -X GET -u elastic:4S392wm9po05JIE7abVl0zi2 "https://localhost:9200/_snapshot/_slm/policy/"**
