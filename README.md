@@ -20,7 +20,7 @@ Retrieve the Elasticsearch password secret from the Kubernetes secret:
 
 because we donot have kibana pod running on kubernetes cluster. So we need to do all activites through curl. For this need elastic user and password.
 
-  elastic user: elastic
+  "elastic user: elastic"
 
 to get elastic search password use below command..
 
